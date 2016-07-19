@@ -1,0 +1,1 @@
+Please insert movie database API key in MovieGridFragment.java, line 120 (String apiKey)!

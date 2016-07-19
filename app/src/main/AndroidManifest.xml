@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.arnold.moviesnow" >
+
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme" >
+
+        <permission
+            android:name="com.example.arnold.moviesnow.favoritemovies.READ"
+            android:description="@string/desc_permission_lentitems_READ"
+            android:label="@string/label_permission_lentitems_READ"
+            android:protectionLevel="normal" />
+
+        <permission
+            android:name="com.example.arnold.moviesnow.favoritemovies.WRITE"
+            android:description="@string/desc_permission_lentitems_WRITE"
+            android:label="@string/label_permission_lentitems_WRITE"
+            android:protectionLevel="normal" />
+
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".MovieDetailActivity"
+                  android:parentActivityName=".MainActivity"/>
+        <activity android:name=".SettingsActivity"/>
+        <activity android:name=".ScreenSlidePagerActivity"
+                  android:parentActivityName=".MainActivity">
+        <meta-data
+            android:name="android.support.PARENT_ACTIVITY"
+            android:value=".MainActivity" />
+        </activity>
+
+        <provider
+            android:name=".FavoriteMovieProvider"
+            android:authorities="com.example.arnold.moviesnow.favoritemovies"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:label="FavoriteMovieProvider"
+            android:readPermission="com.example.arnold.moviesnow.favoritemovies.READ"
+            android:writePermission="com.example.arnold.moviesnow.favoritemovies.WRITE" >
+        </provider>
+    </application>
+
+</manifest>

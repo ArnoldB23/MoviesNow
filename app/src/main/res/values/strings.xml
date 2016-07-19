@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">MoviesNow</string>
+
+    <string name="action_settings">Settings</string>
+
+<!-- TODO: Remove or change this placeholder text -->
+    <string name="pref_most_popular">Most Popular</string>
+    <string name="pref_top_rated">Top Rated</string>
+    <string name="pref_upcoming">Upcoming</string>
+    <string name="pref_now_playing">Now Playing</string>
+    <string name="trailer_title">Trailers</string>
+    <string name="review_title">Reviews</string>
+    <string name="desc_permission_lentitems_READ">Allows an app to read your favorite movies</string>
+    <string name="desc_permission_lentitems_WRITE">Allows an app to add favorite movies or modify existing favorite movies</string>
+    <string name="label_permission_lentitems_READ">Reading favorite movies</string>
+    <string name="label_permission_lentitems_WRITE">Adding and Changing favorite movies</string>
+</resources>
