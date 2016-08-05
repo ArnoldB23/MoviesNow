@@ -92,8 +92,8 @@ public class MovieListSingleton {
     public ArrayList<MovieObj> getFavoritesFromMovieObjArrayList()
     {
         ContentResolver contentResolver = mContext.getContentResolver();
-        String[] projection = new String[]{MoviesProviderContract.FavoriteMovieList.MOVIE_ID};
-        Cursor cursor = contentResolver.query(MoviesProviderContract.FavoriteMovieList.CONTENT_URI, projection, null, null, null);
+        String[] projection = new String[]{ContentProviderMovieContract.FavoriteMovieList.MOVIE_ID};
+        Cursor cursor = contentResolver.query(ContentProviderMovieContract.FavoriteMovieList.CONTENT_URI, projection, null, null, null);
 
         ArrayList<MovieObj> favoriteMovieObjs = new ArrayList<MovieObj>();
 
@@ -123,8 +123,8 @@ public class MovieListSingleton {
     public void updateMovieObjArrayListWithFavorites()
     {
         ContentResolver contentResolver = mContext.getContentResolver();
-        String[] projection = new String[]{MoviesProviderContract.FavoriteMovieList.MOVIE_ID};
-        Cursor cursor = contentResolver.query(MoviesProviderContract.FavoriteMovieList.CONTENT_URI, projection, null, null, null);
+        String[] projection = new String[]{ContentProviderMovieContract.FavoriteMovieList.MOVIE_ID};
+        Cursor cursor = contentResolver.query(ContentProviderMovieContract.FavoriteMovieList.CONTENT_URI, projection, null, null, null);
 
         if (cursor.moveToFirst()){
 

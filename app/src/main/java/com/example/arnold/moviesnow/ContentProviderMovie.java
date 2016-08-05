@@ -12,12 +12,12 @@ import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
-import com.example.arnold.moviesnow.MoviesProviderContract.FavoriteMovieList;
+import com.example.arnold.moviesnow.ContentProviderMovieContract.FavoriteMovieList;
 
 /**
  * Created by Arnold on 3/23/2016.
  */
-public class FavoriteMovieProvider extends ContentProvider {
+public class ContentProviderMovie extends ContentProvider {
 
     private static final int FAVORITE_MOVIE_LIST = 1;
     private static final int FAVORITE_MOVIE_ID = 2;
@@ -26,17 +26,17 @@ public class FavoriteMovieProvider extends ContentProvider {
 
     static {
         URI_MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
-        URI_MATCHER.addURI(MoviesProviderContract.AUTHORITY, "favorite_movie_list", FAVORITE_MOVIE_LIST);
-        URI_MATCHER.addURI(MoviesProviderContract.AUTHORITY, "favorite_movie_list/#", FAVORITE_MOVIE_ID);
+        URI_MATCHER.addURI(ContentProviderMovieContract.AUTHORITY, "favorite_movie_list", FAVORITE_MOVIE_LIST);
+        URI_MATCHER.addURI(ContentProviderMovieContract.AUTHORITY, "favorite_movie_list/#", FAVORITE_MOVIE_ID);
 
     }
 
-    private MoviesProviderOpenHelper mHelper = null;
+    private ContentProviderMovieOpenHelper mHelper = null;
 
     @Override
     public boolean onCreate() {
 
-        mHelper = new MoviesProviderOpenHelper(getContext());
+        mHelper = new ContentProviderMovieOpenHelper(getContext());
         return true;
     }
 
@@ -65,14 +65,14 @@ public class FavoriteMovieProvider extends ContentProvider {
         switch (URI_MATCHER.match(uri))
         {
             case FAVORITE_MOVIE_LIST:
-                builder.setTables(DbSchema.TBL_FAVORITE_MOVIE_LIST);
+                builder.setTables(ContentProviderMovieDbSchema.TBL_FAVORITE_MOVIE_LIST);
                 if (TextUtils.isEmpty(sortOrder)){
                     sortOrder = FavoriteMovieList.SORT_ORDER_DEFAULT;
                 }
 
                 break;
             case FAVORITE_MOVIE_ID:
-                builder.setTables(DbSchema.TBL_FAVORITE_MOVIE_LIST);
+                builder.setTables(ContentProviderMovieDbSchema.TBL_FAVORITE_MOVIE_LIST);
                 builder.appendWhere(FavoriteMovieList._ID + " = " + uri.getLastPathSegment());
                 break;
 
@@ -98,7 +98,7 @@ public class FavoriteMovieProvider extends ContentProvider {
 
         if (URI_MATCHER.match(uri) == FAVORITE_MOVIE_LIST )
         {
-            long id = db.insert(DbSchema.TBL_FAVORITE_MOVIE_LIST, null, contentValues);
+            long id = db.insert(ContentProviderMovieDbSchema.TBL_FAVORITE_MOVIE_LIST, null, contentValues);
             return getUriForId(id, uri);
         }
 
@@ -120,12 +120,12 @@ public class FavoriteMovieProvider extends ContentProvider {
                     where += " AND " + selection;
                 }
 
-                deleteCount = db.delete(DbSchema.TBL_FAVORITE_MOVIE_LIST,  where, selectionArgs);
+                deleteCount = db.delete(ContentProviderMovieDbSchema.TBL_FAVORITE_MOVIE_LIST,  where, selectionArgs);
                 break;
 
             case FAVORITE_MOVIE_LIST:
 
-                deleteCount = db.delete(DbSchema.TBL_FAVORITE_MOVIE_LIST,  selection, selectionArgs);
+                deleteCount = db.delete(ContentProviderMovieDbSchema.TBL_FAVORITE_MOVIE_LIST,  selection, selectionArgs);
                 break;
 
             default:
@@ -156,12 +156,12 @@ public class FavoriteMovieProvider extends ContentProvider {
                     where += " AND " + selection;
                 }
 
-                updateCount = db.update(DbSchema.TBL_FAVORITE_MOVIE_LIST, contentValues, where, selectionArgs);
+                updateCount = db.update(ContentProviderMovieDbSchema.TBL_FAVORITE_MOVIE_LIST, contentValues, where, selectionArgs);
                 break;
 
             case FAVORITE_MOVIE_LIST:
 
-                updateCount = db.update(DbSchema.TBL_FAVORITE_MOVIE_LIST, contentValues, selection, selectionArgs);
+                updateCount = db.update(ContentProviderMovieDbSchema.TBL_FAVORITE_MOVIE_LIST, contentValues, selection, selectionArgs);
                 break;
 
             default:

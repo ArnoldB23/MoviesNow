@@ -43,7 +43,7 @@
         </activity>
 
         <provider
-            android:name=".FavoriteMovieProvider"
+            android:name=".ContentProviderMovie"
             android:authorities="com.example.arnold.moviesnow.favoritemovies"
             android:exported="true"
             android:grantUriPermissions="true"

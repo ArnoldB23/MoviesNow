@@ -261,8 +261,8 @@ public class MovieGridFragment extends Fragment implements FetchMovieDetailsPost
     public void getFavoriteMovieList()
     {
         ContentResolver contentResolver = getContext().getContentResolver();
-        String [] projection = new String[]{MoviesProviderContract.FavoriteMovieList.MOVIE_ID, MoviesProviderContract.FavoriteMovieList.MOVIE_NAME};
-        Cursor cursor = contentResolver.query(MoviesProviderContract.FavoriteMovieList.CONTENT_URI, projection, null, null,null);
+        String [] projection = new String[]{ContentProviderMovieContract.FavoriteMovieList.MOVIE_ID, ContentProviderMovieContract.FavoriteMovieList.MOVIE_NAME};
+        Cursor cursor = contentResolver.query(ContentProviderMovieContract.FavoriteMovieList.CONTENT_URI, projection, null, null,null);
 
         ArrayList<MovieObj> favoriteMovieObjs = new ArrayList<MovieObj>();
 

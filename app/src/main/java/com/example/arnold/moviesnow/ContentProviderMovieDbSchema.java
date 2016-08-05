@@ -5,7 +5,7 @@ import android.provider.BaseColumns;
 /**
  * Created by Arnold on 4/1/2016.
  */
-public interface DbSchema {
+public interface ContentProviderMovieDbSchema {
 
     String DB_NAME = "moviesprovider.db";
 

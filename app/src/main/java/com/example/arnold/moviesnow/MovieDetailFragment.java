@@ -101,18 +101,18 @@ public class MovieDetailFragment extends Fragment implements FetchMovieDetailsPo
                     movie.favorite = true;
 
                     ContentValues values = new ContentValues();
-                    values.put(MoviesProviderContract.FavoriteMovieList.MOVIE_ID, movie.id);
-                    values.put(MoviesProviderContract.FavoriteMovieList.MOVIE_NAME, movie.original_title);
+                    values.put(ContentProviderMovieContract.FavoriteMovieList.MOVIE_ID, movie.id);
+                    values.put(ContentProviderMovieContract.FavoriteMovieList.MOVIE_NAME, movie.original_title);
 
-                    contentResolver.insert(MoviesProviderContract.FavoriteMovieList.CONTENT_URI, values);
+                    contentResolver.insert(ContentProviderMovieContract.FavoriteMovieList.CONTENT_URI, values);
 
 
                 } else {
                     favoriteButton.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_favorite_border_black_24dp, 0, 0, 0);
                     movie.favorite = false;
 
-                    String where = MoviesProviderContract.FavoriteMovieList.MOVIE_ID + " = " + movie.id;
-                    contentResolver.delete(MoviesProviderContract.FavoriteMovieList.CONTENT_URI, where, null);
+                    String where = ContentProviderMovieContract.FavoriteMovieList.MOVIE_ID + " = " + movie.id;
+                    contentResolver.delete(ContentProviderMovieContract.FavoriteMovieList.CONTENT_URI, where, null);
 
                 }
 
