@@ -1,15 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                                              android:id="@+id/swipe_refresh_layout"
+                                              android:layout_width="match_parent"
+                                              android:layout_height="match_parent">
+    <FrameLayout
              android:layout_width="match_parent"
-             android:layout_height="match_parent"
-             android:orientation="vertical">
+             android:layout_height="match_parent">
 
-    <GridView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id="@+id/gridView_movies"
-        android:layout_gravity="center"
-        android:numColumns="auto_fit"
-        android:smoothScrollbar="true"
-        android:stretchMode="columnWidth"/>
-</LinearLayout>
+
+        <in.srain.cube.views.GridViewWithHeaderAndFooter
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/gridView_movies"
+            android:layout_gravity="center"
+            android:numColumns="auto_fit"
+            android:smoothScrollbar="true"
+            android:stretchMode="columnWidth"/>
+
+
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/gridView_empty"
+            android:text="@string/empty_grid_view"
+            android:visibility="gone"
+            android:gravity="center"/>
+    </FrameLayout>
+
+</android.support.v4.widget.SwipeRefreshLayout>

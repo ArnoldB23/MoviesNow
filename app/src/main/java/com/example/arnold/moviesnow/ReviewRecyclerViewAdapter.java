@@ -1,24 +1,24 @@
 package com.example.arnold.moviesnow;
 
+import android.content.Context;
+import android.database.Cursor;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-
 /**
  * Created by Arnold on 3/14/2016.
  */
-public class ReviewRecyclerViewAdapter extends RecyclerView.Adapter<ReviewRecyclerViewAdapter.ReviewViewHolder> {
-
-    public ArrayList<MovieObj.UserReview> mUserReviews;
+public class ReviewRecyclerViewAdapter extends CursorRecyclerViewAdapter<ReviewRecyclerViewAdapter.ReviewViewHolder> {
 
 
-    public ReviewRecyclerViewAdapter (ArrayList<MovieObj.UserReview> userReviews)
+
+
+    public ReviewRecyclerViewAdapter (Context context, Cursor cursor)
     {
-        mUserReviews = userReviews;
+        super(context,cursor);
     }
 
     @Override
@@ -31,17 +31,12 @@ public class ReviewRecyclerViewAdapter extends RecyclerView.Adapter<ReviewRecycl
     }
 
     @Override
-    public void onBindViewHolder (ReviewViewHolder holder, int position)
+    public void onBindViewHolder (ReviewViewHolder holder, Cursor cursor)
     {
-        holder.mReviewText.setText(mUserReviews.get(position).review_text);
-        holder.mReviewName.setText(mUserReviews.get(position).user_name);
+        holder.mReviewText.setText(cursor.getString(MovieDetailFragment.MOVIE_REVIEW_LOADER_COL_INDEX_USERNAME));
+        holder.mReviewName.setText(cursor.getString(MovieDetailFragment.MOVIE_REVIEW_LOADER_COL_INDEX_COMMENT));
     }
 
-    @Override
-    public int getItemCount()
-    {
-        return mUserReviews.size();
-    }
 
 
     public class ReviewViewHolder extends RecyclerView.ViewHolder{

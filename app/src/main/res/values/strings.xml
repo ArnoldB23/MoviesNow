@@ -14,4 +14,8 @@
     <string name="desc_permission_lentitems_WRITE">Allows an app to add favorite movies or modify existing favorite movies</string>
     <string name="label_permission_lentitems_READ">Reading favorite movies</string>
     <string name="label_permission_lentitems_WRITE">Adding and Changing favorite movies</string>
+    <string name="content_authority">com.example.arnold.moviesnow</string>
+    <string name="sync_account_type">com.example.arnold</string>
+    <string name="empty_grid_view">There are no movies available</string>
+    <string name="footer_title">Load More</string>
 </resources>

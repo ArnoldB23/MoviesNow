@@ -3,67 +3,49 @@ package com.example.arnold.moviesnow;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-
 
 /**
  * Created by Arnold on 1/11/2016.
  */
-public class TrailerRecyclerViewAdapter  extends RecyclerView.Adapter<TrailerRecyclerViewAdapter.TrailerViewHolder>{
+public class TrailerRecyclerViewAdapter  extends CursorRecyclerViewAdapter<TrailerRecyclerViewAdapter.TrailerViewHolder>{
 
     private final String LOG_TAG = "TrailerRecyclerViewAdap";
-    public ArrayList<MovieObj.TrailerInfo> mTrailers;
+
     private Context mContext;
 
-    public TrailerRecyclerViewAdapter(Context context, ArrayList<MovieObj.TrailerInfo> trailers)
+    public TrailerRecyclerViewAdapter(Context context, Cursor cursor)
     {
-        mContext = context;
-        mTrailers = trailers;
 
+        super(context,cursor);
+        mContext = context;
     }
 
     @Override
     public TrailerViewHolder onCreateViewHolder(ViewGroup parent, int viewType)
     {
-        View rootView = LayoutInflater.from(parent.getContext()).inflate(R.layout.trailer_list_item, parent, false);
+        View rootView = LayoutInflater.from(mContext).inflate(R.layout.trailer_list_item, parent, false);
 
         TrailerViewHolder trailerHolder = new TrailerViewHolder( mContext, rootView );
 
-        if (rootView == null)
-            Log.d(LOG_TAG, "onCreateViewHolder: rootView is null!" );
 
         return trailerHolder;
     }
 
     @Override
-    public void onBindViewHolder (TrailerViewHolder holder, int position)
+    public void onBindViewHolder (TrailerViewHolder holder, Cursor cursor)
     {
-        holder.mUrl = mTrailers.get(position).trailer_url;
-        holder.mTrailerNameTextView.setText(mTrailers.get(position).trailer_name);
+        holder.mUrl = cursor.getString(MovieDetailFragment.MOVIE_TRAILER_LOADER_COL_INDEX_TRAILER_URL);
+        holder.mTrailerNameTextView.setText(cursor.getString(MovieDetailFragment.MOVIE_TRAILER_LOADER_COL_INDEX_TRAILER_NAME));
 
         //Log.d(LOG_TAG, "onBindViewHolder: holder.mTrailerNameTextView= " + holder.mTrailerNameTextView.getText());
-    }
-
-    @Override
-    public int getItemCount()
-    {
-        return mTrailers.size();
-    }
-
-
-    public void updateTrailerInfo(ArrayList<MovieObj.TrailerInfo> trailers)
-    {
-        mTrailers.clear();
-        mTrailers.addAll(trailers);
-        notifyDataSetChanged();
     }
 
 

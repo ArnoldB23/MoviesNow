@@ -4,6 +4,20 @@
 
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Permissions required by the sync adapter -->
+    <uses-permission
+        android:name="android.permission.READ_SYNC_SETTINGS"/>
+    <uses-permission
+        android:name="android.permission.WRITE_SYNC_SETTINGS"/>
+    <uses-permission
+        android:name="android.permission.AUTHENTICATE_ACCOUNTS"/>
+
+    <!-- Permissions required to make our UI more friendly -->
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -32,9 +46,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".MovieDetailActivity"
-                  android:parentActivityName=".MainActivity"/>
-        <activity android:name=".SettingsActivity"/>
         <activity android:name=".ScreenSlidePagerActivity"
                   android:parentActivityName=".MainActivity">
         <meta-data
@@ -43,14 +54,38 @@
         </activity>
 
         <provider
-            android:name=".ContentProviderMovie"
-            android:authorities="com.example.arnold.moviesnow.favoritemovies"
+            android:name=".data.ContentProviderMovie"
+            android:authorities="@string/content_authority"
             android:exported="true"
             android:grantUriPermissions="true"
-            android:label="FavoriteMovieProvider"
+            android:label="MovieProvider"
+            android:syncable="true"
             android:readPermission="com.example.arnold.moviesnow.favoritemovies.READ"
             android:writePermission="com.example.arnold.moviesnow.favoritemovies.WRITE" >
         </provider>
+
+        <!-- SyncAdapter's dummy authentication service -->
+        <service android:name=".sync.MoviesNowAuthenticatorService">
+            <intent-filter>
+                <action android:name="android.accounts.AccountAuthenticator" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accounts.AccountAuthenticator"
+                android:resource="@xml/authenticator" />
+        </service>
+
+        <!-- The SyncAdapter service -->
+        <service
+            android:name=".sync.MoviesNowSyncService"
+            android:exported="true"
+            >
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/syncadapter" />
+        </service>
     </application>
 
 </manifest>

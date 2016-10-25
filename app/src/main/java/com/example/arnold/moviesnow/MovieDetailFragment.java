@@ -3,11 +3,17 @@ package com.example.arnold.moviesnow;
 import android.app.SearchManager;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -19,210 +25,209 @@ import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import com.example.arnold.moviesnow.data.ContentProviderMovieContract;
+import com.example.arnold.moviesnow.data.ContentProviderMovieDbSchema;
+import com.example.arnold.moviesnow.sync.MoviesNowSyncAdapter;
 import com.squareup.picasso.Picasso;
-
-import java.util.ArrayList;
 
 /**
  * Created by Arnold on 10/4/2015.
  */
-public class MovieDetailFragment extends Fragment implements FetchMovieDetailsPostExecute {
-    public static final String EXTRA_MOVIE = "Do it, just do it!";
+public class MovieDetailFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+    private static final String LOG_TAG = "MovieDetailFragment";
+
     public RecyclerView mTrailerRecyclerView;
     public RecyclerView mReviewRecyclerView;
     public ReviewRecyclerViewAdapter mReviewRecyclerViewAdapter;
     public TrailerRecyclerViewAdapter mTrailerRecyclerViewAdapter;
     public TextView mTrailerSectionTitle;
     public TextView mReviewSectionTitle;
-    public MovieObj mTrailersAndReviewsMovieObj;
     public ScrollView mScrollView;
-    private static final String LOG_TAG = "MovieDetailFragment";
-    public MovieObj movie;
-    public int movie_position;
+    public ImageView mBackdropImageView;
+    public Button mFavoriteButton;
+    public TextView mOverviewTextView;
+    public TextView mOriginalTitleTextView;
+    public TextView mOriginalTitle;
+    public TextView mVoteAverage;
+    public TextView mReleaseDate;
 
+
+    public String mMovieId;
+    public boolean mIsFavorite;
+    private String mCurrentListName;
+    private String mPageNum;
+    public Context mContext;
+
+    public final int MOVIE_DETAIL_LOADER_ID = 0;
+    public final int MOVIE_TRAILERS_LOADER_ID = 1;
+    public final int MOVIE_REVIEWS_LOADER_ID = 2;
+    public final int MOVIE_FAVORITE_LOADER_ID = 3;
+
+
+    public static final String [] MOVIE_DETAIL_LOADER_COLUMNS = {
+                ContentProviderMovieContract.Movies._ID,
+                ContentProviderMovieContract.Movies.COL_ORIGINAL_TITLE,
+                ContentProviderMovieContract.Movies.COL_BACKDROP_PATH,
+                ContentProviderMovieContract.Movies.COL_OVERVIEW,
+                ContentProviderMovieContract.Movies.COL_VOTE_AVERAGE,
+                ContentProviderMovieContract.Movies.COL_RELEASE_DATE};
+
+    // These MOVIE_DETAIL_LOADER_COL_INDEX_... are mapped to MOVIE_DETAIL_LOADER_COLUMNS
+    public static final int MOVIE_DETAIL_LOADER_COL_INDEX_MOVIEID = 0;
+    public static final int MOVIE_DETAIL_LOADER_COL_INDEX_ORIGINAL_TITLE = 1;
+    public static final int MOVIE_DETAIL_LOADER_COL_INDEX_BACKDROP_PATH = 2;
+    public static final int MOVIE_DETAIL_LOADER_COL_INDEX_OVERVIEW = 3;
+    public static final int MOVIE_DETAIL_LOADER_COL_INDEX_VOTE_AVERAGE= 4;
+    public static final int MOVIE_DETAIL_LOADER_COL_INDEX_RELEASE_DATE = 5;
+
+
+    public static final String [] MOVIE_TRAILER_LOADER_COLUMNS = {
+            ContentProviderMovieContract.Trailers._ID,
+            ContentProviderMovieContract.Trailers.COL_TRAILER_NAME,
+            ContentProviderMovieContract.Trailers.COL_TRAILER_URL
+    };
+
+    // These MOVIE_TRAILER_LOADER_COL_INDEX_... are mapped to MOVIE_TRAILER_LOADER_COLUMNS
+    public static final int MOVIE_TRAILER_LOADER_COL_INDEX_TRAILER_ID = 0;
+    public static final int MOVIE_TRAILER_LOADER_COL_INDEX_TRAILER_NAME = 1;
+    public static final int MOVIE_TRAILER_LOADER_COL_INDEX_TRAILER_URL = 2;
+
+    public static final String [] MOVIE_REVIEW_LOADER_COLUMNS = {
+            ContentProviderMovieContract.Reviews._ID,
+            ContentProviderMovieContract.Reviews.COL_REVIEW_USERNAME,
+            ContentProviderMovieContract.Reviews.COL_REVIEW_COMMENT
+    };
+
+    public static final int MOVIE_REVIEW_LOADER_COL_INDEX_REVIEW_ID = 0;
+    public static final int MOVIE_REVIEW_LOADER_COL_INDEX_USERNAME = 1;
+    public static final int MOVIE_REVIEW_LOADER_COL_INDEX_COMMENT = 2;
+
+    @Override
+    public void onCreate(Bundle onSaveInstance)
+    {
+        super.onCreate(onSaveInstance);
+
+        mContext = getContext();
+    }
 
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
-        movie_position = (int) getArguments().getInt(EXTRA_MOVIE);
-        //movie = MovieListSingleton.get(getContext()).getMovieObj(movie_position);
-        movie = MovieListSingleton.get(getContext()).getMovieObjArrayList().get(movie_position);
-        final ContentResolver contentResolver = getContext().getContentResolver();
-
+        mMovieId = getArguments().getString(ContentProviderMovieDbSchema.TBL_MOVIES + "." + ContentProviderMovieContract.Movies._ID);
+        mCurrentListName = getArguments().getString(ContentProviderMovieDbSchema.TBL_MOVIE_LISTS + "." + ContentProviderMovieContract.MovieLists.COL_MOVIELIST_NAME);
 
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
 
-        ImageView imageView = (ImageView) rootView.findViewById(R.id.movie_imageView);
-        String posterPath = MovieImageAdapter.constructPosterPath(movie.backdrop_path);
-        //Log.d(LOG_TAG, "backdrop_path = " + posterPath);
+        mBackdropImageView = (ImageView) rootView.findViewById(R.id.movie_imageView);
+        mFavoriteButton = (Button) rootView.findViewById(R.id.favorite_button);
+        mOriginalTitle = (TextView) rootView.findViewById(R.id.original_title_textView);
+        mOverviewTextView = (TextView) rootView.findViewById(R.id.overview_textView);
+        mVoteAverage = (TextView) rootView.findViewById(R.id.vote_average_textView);
+        mReleaseDate = (TextView) rootView.findViewById(R.id.release_date_textView);
+        mTrailerRecyclerView = (RecyclerView)rootView.findViewById(R.id.trailer_recycler_view);
+        mReviewRecyclerView = (RecyclerView)rootView.findViewById(R.id.review_recycler_view);
+        mTrailerSectionTitle = (TextView) rootView.findViewById(R.id.trailer_section_title);
+        mReviewSectionTitle = (TextView) rootView.findViewById(R.id.review_section_title);
+        mScrollView = (ScrollView)rootView.findViewById(R.id.detail_scrollView);
+
+        mFavoriteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                final ContentResolver contentResolver = getActivity().getContentResolver();
+
+                if (mIsFavorite == false) {
+                    mFavoriteButton.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_favorite_black_24dp, 0, 0, 0);
 
 
-        GradientDrawable errorDrawable = new GradientDrawable();
-        errorDrawable.setShape(GradientDrawable.RECTANGLE);
-        errorDrawable.setSize(360, 202);
-        errorDrawable.setColor(Color.LTGRAY);
-        errorDrawable.setStroke(1, Color.BLACK);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Uri favoriteMovieListUri = ContentProviderMovieContract.MoviesToLists.buildMoviesToListsUriWithListName(MoviesNowSyncAdapter.MY_FAVORITES);
+                            Cursor favorites = contentResolver.query(favoriteMovieListUri, null, null, null, null);
 
-        final String original_title_str = movie.original_title;
+                            int totalNumFavorites = favorites.getCount();
+                            int page = totalNumFavorites/MoviesNowSyncAdapter.FAVORITE_NUM_PER_PAGE + 1;
+                            ContentValues values = new ContentValues();
+                            values.put(ContentProviderMovieContract.MoviesToLists.COL_PAGE_NUM, page);
+                            values.put(ContentProviderMovieContract.MoviesToLists.COL_MOVIE_ID, mMovieId);
 
-        Picasso.with(getActivity()).load(posterPath).error(errorDrawable).into(imageView);
-        imageView.setOnLongClickListener(new View.OnLongClickListener() {
+                            contentResolver.insert(favoriteMovieListUri, values);
+                        }
+                    }).start();
+
+
+                } else {
+                    mFavoriteButton.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_favorite_border_black_24dp, 0, 0, 0);
+
+
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            String where = ContentProviderMovieContract.MoviesToLists.COL_MOVIE_ID + " = ?";
+                            //contentResolver.delete(ContentProviderMovieContract.Movies.buildMovieUriWithID(Long.valueOf(mMovieId)), null, null);
+                            int numdel = contentResolver.delete(ContentProviderMovieContract.MoviesToLists.buildMoviesToListsUriWithListName(MoviesNowSyncAdapter.MY_FAVORITES), where, new String [] {mMovieId});
+                            Log.d(LOG_TAG, "Deleted " + numdel + " from Favorites");
+
+                            MovieGridFragment.reorderFavoriteList(mContext);
+                        }
+                    }).start();
+                }
+
+                mIsFavorite = !mIsFavorite;
+
+            }
+        });
+
+        mBackdropImageView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
+                if (mOriginalTitle.getText().toString().isEmpty())
+                    return false;
+
 
                 Intent intent = new Intent(Intent.ACTION_WEB_SEARCH);
-                intent.putExtra(SearchManager.QUERY, original_title_str + " showtimes");
+                intent.putExtra(SearchManager.QUERY, mOriginalTitle.getText().toString() + " showtimes");
 
                 startActivity(intent);
                 return true;
             }
         });
 
-        final Button favoriteButton = (Button) rootView.findViewById(R.id.favorite_button);
-        if ( movie.favorite == true)
-        {
-            //Drawable leftDrawable = getResources().getDrawable(R.drawable.ic_favorite_black_24dp);
-            favoriteButton.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_favorite_black_24dp, 0, 0, 0);
-
-        }
-        else
-        {
-            favoriteButton.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_favorite_border_black_24dp, 0, 0, 0);
-        }
-
-        favoriteButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                if (movie.favorite == false) {
-                    //Drawable leftDrawable = getResources().getDrawable(R.drawable.ic_favorite_black_24dp);
-                    favoriteButton.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_favorite_black_24dp, 0, 0, 0);
-                    movie.favorite = true;
-
-                    ContentValues values = new ContentValues();
-                    values.put(ContentProviderMovieContract.FavoriteMovieList.MOVIE_ID, movie.id);
-                    values.put(ContentProviderMovieContract.FavoriteMovieList.MOVIE_NAME, movie.original_title);
-
-                    contentResolver.insert(ContentProviderMovieContract.FavoriteMovieList.CONTENT_URI, values);
-
-
-                } else {
-                    favoriteButton.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_favorite_border_black_24dp, 0, 0, 0);
-                    movie.favorite = false;
-
-                    String where = ContentProviderMovieContract.FavoriteMovieList.MOVIE_ID + " = " + movie.id;
-                    contentResolver.delete(ContentProviderMovieContract.FavoriteMovieList.CONTENT_URI, where, null);
-
-                }
-
-            }
-        });
-
-        TextView originalTitle = (TextView) rootView.findViewById(R.id.original_title_textView);
-        originalTitle.setText(movie.original_title);
-
-        TextView overview = (TextView) rootView.findViewById(R.id.overview_textView);
-
-
-        overview.setText(movie.overview);
-
-        TextView voteAverage = (TextView) rootView.findViewById(R.id.vote_average_textView);
-        voteAverage.setText(movie.vote_average + "/10");
-
-        TextView releaseDate = (TextView) rootView.findViewById(R.id.release_date_textView);
-        String dates [] = movie.release_date.split("-");
-        String months [] = {"", "January","February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
-        releaseDate.setText("(" + months[Integer.valueOf(dates[1])] + " " + dates[0] + ")");
-
-        mTrailersAndReviewsMovieObj = new MovieObj();
-
-        mTrailerRecyclerView = (RecyclerView)rootView.findViewById(R.id.trailer_recycler_view);
-
-
-        mReviewRecyclerView = (RecyclerView)rootView.findViewById(R.id.review_recycler_view);
-
-
-        mTrailerSectionTitle = (TextView) rootView.findViewById(R.id.trailer_section_title);
-        mReviewSectionTitle = (TextView) rootView.findViewById(R.id.review_section_title);
-
-        mTrailerRecyclerViewAdapter = new TrailerRecyclerViewAdapter(getContext(), mTrailersAndReviewsMovieObj.mTrailerInfos);
-        //mTrailerRecyclerView.setAdapter(mTrailerRecyclerViewAdapter);
-        mTrailerRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mTrailerRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), LinearLayoutManager.VERTICAL));
-        mTrailerRecyclerView.setNestedScrollingEnabled(false);
-        //mTrailerRecyclerViewAdapter.mTrailers = (ArrayList<MovieObj.TrailerInfo>) movieObj.mTrailerInfos.clone();
-
-        mTrailerRecyclerView.setAdapter(mTrailerRecyclerViewAdapter);
-
-
-        mReviewRecyclerViewAdapter = new ReviewRecyclerViewAdapter(mTrailersAndReviewsMovieObj.mUserReviews);
-
-        //mReviewRecyclerView.setAdapter(mReviewRecyclerViewAdapter);
-        mReviewRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mReviewRecyclerView.addItemDecoration(new DividerItemDecoration(getContext(), LinearLayoutManager.VERTICAL));
+        mReviewRecyclerViewAdapter = new ReviewRecyclerViewAdapter(mContext, null);
+        mReviewRecyclerView.setLayoutManager(new LinearLayoutManager(mContext));
+        mReviewRecyclerView.addItemDecoration(new DividerItemDecoration(mContext, LinearLayoutManager.VERTICAL));
         mReviewRecyclerView.setNestedScrollingEnabled(false);
-
         mReviewRecyclerView.setAdapter(mReviewRecyclerViewAdapter);
 
-        mScrollView = (ScrollView)rootView.findViewById(R.id.detail_scrollView);
-
-
-        ArrayList<MovieObj> movieObjArrayList = new ArrayList<MovieObj>();
-        movieObjArrayList.add(movie);
-
-
-        //if (movie.mUserReviews.isEmpty() && movie.mTrailerInfos.isEmpty())
-            new FetchMovieDetailsTask(this).execute(movieObjArrayList);
-        //else
-            //postExecute(movie);
-
-
+        mTrailerRecyclerViewAdapter = new TrailerRecyclerViewAdapter(mContext, null);
+        mTrailerRecyclerView.setLayoutManager(new LinearLayoutManager(mContext));
+        mTrailerRecyclerView.addItemDecoration(new DividerItemDecoration(mContext, LinearLayoutManager.VERTICAL));
+        mTrailerRecyclerView.setNestedScrollingEnabled(false);
+        mTrailerRecyclerView.setAdapter(mTrailerRecyclerViewAdapter);
 
         return rootView;
     }
 
-    public static Fragment newInstance (int position)
-    {
-        Bundle args = new Bundle();
-        args.putInt(EXTRA_MOVIE, position);
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        getLoaderManager().initLoader(MOVIE_DETAIL_LOADER_ID, null, this);
+        getLoaderManager().initLoader(MOVIE_TRAILERS_LOADER_ID, null, this);
+        getLoaderManager().initLoader(MOVIE_REVIEWS_LOADER_ID, null, this);
+        getLoaderManager().initLoader(MOVIE_FAVORITE_LOADER_ID, null, this);
+        super.onActivityCreated(savedInstanceState);
+    }
 
+    public static Fragment newInstance ()
+    {
         Fragment f = new MovieDetailFragment();
-        f.setArguments(args);
 
         return f;
     }
 
-    public void postExecute(ArrayList<MovieObj> movieObjs)
-    {
-
-        //movieObj.LogCurrentState();
-        MovieObj movieObj = movieObjs.get(0);
-
-        if(movieObj.mUserReviews.isEmpty())
-        {
-            mReviewSectionTitle.setVisibility(View.GONE);
-        }
-        else{
-            mReviewRecyclerViewAdapter.mUserReviews.clear();
-            mReviewRecyclerViewAdapter.mUserReviews.addAll( movieObj.mUserReviews );
-            mReviewRecyclerViewAdapter.notifyDataSetChanged();
-
-        }
-
-        if (movieObj.mTrailerInfos.isEmpty())
-        {
-            mTrailerSectionTitle.setVisibility(View.GONE);
-        }
-        else{
-
-            mTrailerRecyclerViewAdapter.mTrailers.clear();
-            mTrailerRecyclerViewAdapter.mTrailers.addAll( movieObj.mTrailerInfos );
-            mTrailerRecyclerViewAdapter.notifyDataSetChanged();
-        }
 
 
-    }
 
     @Override
     public void onResume()
@@ -243,13 +248,113 @@ public class MovieDetailFragment extends Fragment implements FetchMovieDetailsPo
 
         Log.d(LOG_TAG, "onPause ");
 
-        //Intent result = new Intent();
-        //result.putExtra(MovieGridFragment.POSITION_EXTRA, movie_position);
-        //getActivity().setResult(Activity.RESULT_OK, result);
-
-        //Log.d(LOG_TAG, "onPause: position = " + movie_position);
-
     }
 
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+
+
+        CursorLoader cursorLoader = null;
+        String where = null;
+
+        switch(id){
+            case MOVIE_DETAIL_LOADER_ID:
+                where = ContentProviderMovieContract.Movies._ID + " = " + mMovieId;
+                cursorLoader = new CursorLoader(mContext, ContentProviderMovieContract.Movies.CONTENT_URI, MOVIE_DETAIL_LOADER_COLUMNS, where, null, null);
+                break;
+            case MOVIE_REVIEWS_LOADER_ID:
+                where = ContentProviderMovieContract.Reviews.COL_MOVIE_ID + " = " + mMovieId;
+                cursorLoader = new CursorLoader(mContext, ContentProviderMovieContract.Reviews.CONTENT_URI, MOVIE_REVIEW_LOADER_COLUMNS, where, null, null);
+                break;
+            case MOVIE_TRAILERS_LOADER_ID:
+                where = ContentProviderMovieContract.Trailers.COL_MOVIE_ID + " = " + mMovieId;
+                cursorLoader = new CursorLoader(mContext, ContentProviderMovieContract.Trailers.CONTENT_URI, MOVIE_TRAILER_LOADER_COLUMNS, where, null, null);
+                break;
+            case MOVIE_FAVORITE_LOADER_ID:
+                where = ContentProviderMovieDbSchema.TBL_MOVIE_LISTS + "." + ContentProviderMovieContract.MovieLists.COL_MOVIELIST_NAME + " = ? AND " +
+                        ContentProviderMovieDbSchema.TBL_MOVIES + "." + ContentProviderMovieContract.Movies._ID + " = ?";
+                cursorLoader = new CursorLoader(mContext,
+                        ContentProviderMovieContract.MoviesToLists.buildMoviesToListsUriWithListName(MoviesNowSyncAdapter.MY_FAVORITES),
+                        new String [] {ContentProviderMovieContract.Movies.COL_ORIGINAL_TITLE, ContentProviderMovieContract.MoviesToLists.COL_PAGE_NUM},
+                        where, new String []{MoviesNowSyncAdapter.MY_FAVORITES, mMovieId}, null);
+                break;
+        }
+
+        return cursorLoader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+
+        switch(loader.getId()){
+            case MOVIE_DETAIL_LOADER_ID:
+
+                if (data != null && data.moveToFirst())
+                {
+                    GradientDrawable errorDrawable = new GradientDrawable();
+                    errorDrawable.setShape(GradientDrawable.RECTANGLE);
+                    errorDrawable.setSize(360, 202);
+                    errorDrawable.setColor(Color.LTGRAY);
+                    errorDrawable.setStroke(1, Color.BLACK);
+
+                    String backdropPath = MovieCursorAdapter.constructPosterPath(data.getString(MOVIE_DETAIL_LOADER_COL_INDEX_BACKDROP_PATH));
+
+                    Picasso.with(getActivity()).load(backdropPath).error(errorDrawable).into(mBackdropImageView);
+
+                    mOriginalTitle.setText(data.getString(MOVIE_DETAIL_LOADER_COL_INDEX_ORIGINAL_TITLE));
+
+                    mVoteAverage.setText(data.getString(MOVIE_DETAIL_LOADER_COL_INDEX_VOTE_AVERAGE) + "/10");
+
+                    String dates [] = data.getString(MOVIE_DETAIL_LOADER_COL_INDEX_RELEASE_DATE).split("-");
+                    String months [] = {"", "January","February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+                    mReleaseDate.setText("(" + months[Integer.valueOf(dates[1])] + " " + dates[0] + ")");
+
+
+                    mOverviewTextView.setText(data.getString(MOVIE_DETAIL_LOADER_COL_INDEX_OVERVIEW));
+                }
+
+                break;
+            case MOVIE_REVIEWS_LOADER_ID:
+                mReviewRecyclerViewAdapter.swapCursor(data);
+
+                break;
+            case MOVIE_TRAILERS_LOADER_ID:
+                mTrailerRecyclerViewAdapter.swapCursor(data);
+                break;
+
+            case MOVIE_FAVORITE_LOADER_ID:
+
+                if (data.moveToFirst())
+                {
+
+                    mFavoriteButton.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_favorite_black_24dp, 0, 0, 0);
+                    mIsFavorite = true;
+                }
+                else {
+
+                    mFavoriteButton.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_favorite_border_black_24dp, 0, 0, 0);
+                    mIsFavorite = false;
+                }
+
+                break;
+        }
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+
+        switch(loader.getId()){
+            case MOVIE_DETAIL_LOADER_ID:
+                break;
+            case MOVIE_REVIEWS_LOADER_ID:
+                mReviewRecyclerViewAdapter.swapCursor(null);
+                break;
+            case MOVIE_TRAILERS_LOADER_ID:
+                mTrailerRecyclerViewAdapter.swapCursor(null);
+                break;
+        }
+
+    }
 }

@@ -4,14 +4,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.widget.Spinner;
+
+import com.example.arnold.moviesnow.sync.MoviesNowSyncAdapter;
 
 
 public class MainActivity extends AppCompatActivity {
 
-    private Spinner mCategorySpinner;
+
     private final String LOG_TAG = "MainActivity";
-    private MovieGridFragment mMovieGridFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,22 +22,22 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
         if (savedInstanceState == null)
         {
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.fragment_container, new MovieGridFragment())
                     .commit();
 
-            mMovieGridFragment = (MovieGridFragment)getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+
         }
+
+        MoviesNowSyncAdapter.initializeSyncAdapter(this);
     }
 
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // Override this method in the activity that hosts the Fragment and call super
-        // in order to receive the result inside onActivityResult from the fragment.
+
         super.onActivityResult(requestCode, resultCode, data);
 
         Log.d(LOG_TAG, "onActivityResult");
@@ -85,6 +85,8 @@ public class MainActivity extends AppCompatActivity {
     {
         super.onDestroy();
         Log.d(LOG_TAG, "onDestroy");
+
+
     }
 
 }

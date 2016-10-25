@@ -2,41 +2,42 @@ package com.example.arnold.moviesnow;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
+import android.support.v4.app.LoaderManager;
 import android.support.v4.app.NavUtils;
-import android.support.v4.view.PagerAdapter;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MenuItem;
 
-import java.util.ArrayList;
-import java.util.Stack;
+import com.example.arnold.moviesnow.data.ContentProviderMovieContract;
 
 
 /**
  * Created by Arnold on 10/29/2015.
  */
-public class ScreenSlidePagerActivity extends AppCompatActivity {
+public class ScreenSlidePagerActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
     public static final String EXTRA_MOVIE_POSITION = "MOVIEPOSITION";
-    public static final String EXTRA_STACK = "STACK";
+    public static final String EXTRA_MOVIES_URI = "MOVIES_URI";
+    public static final String EXTRA_PAGENUM = "PAGENUM";
     public static final String LOG_TAG = "ScreenSlidePagerActivit";
     private ViewPager mViewPager;
-    private PagerAdapter mPagerAdapter;
-    private Stack mMovieListPositionsStack;
-    private int position;
-
+    public  CursorPagerAdapter mCursorPagerAdapter;
+    private int mPosition;
+    private Uri mMoviesUri;
+    private boolean firstLoad = true;
+    private int mPageNum;
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState)
     {
         super.onSaveInstanceState(savedInstanceState);
 
-        savedInstanceState.putIntegerArrayList(EXTRA_STACK, new ArrayList(mMovieListPositionsStack));
-        savedInstanceState.putInt(EXTRA_MOVIE_POSITION, position);
+        savedInstanceState.putInt(EXTRA_MOVIE_POSITION, mPosition);
     }
 
     @Override
@@ -49,42 +50,40 @@ public class ScreenSlidePagerActivity extends AppCompatActivity {
 
         Log.d(LOG_TAG, "onCreate");
 
-        mViewPager = (ViewPager) findViewById(R.id.viewpager);
-        mPagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager());
-        mViewPager.setAdapter(mPagerAdapter);
-
 
         if (savedInstanceState != null)
         {
-            position = savedInstanceState.getInt(EXTRA_MOVIE_POSITION);
+            mPosition = savedInstanceState.getInt(EXTRA_MOVIE_POSITION);
         }
 
         else {
-            position = getIntent().getExtras().getInt(EXTRA_MOVIE_POSITION);
+            mPosition = getIntent().getExtras().getInt(EXTRA_MOVIE_POSITION);
+            mMoviesUri = getIntent().getExtras().getParcelable(EXTRA_MOVIES_URI);
+            mPageNum = getIntent().getExtras().getInt(EXTRA_PAGENUM);
         }
 
-
-        mViewPager.setCurrentItem(position);
-
+        Log.d(LOG_TAG, "onCreate, mPosition = " + mPosition);
+        mViewPager = (ViewPager) findViewById(R.id.viewpager);
+        mCursorPagerAdapter = new CursorPagerAdapter(getSupportFragmentManager(), MovieDetailFragment.class, MovieGridFragment.GRID_MOVIE_COLUMNS, null);
+        mViewPager.setAdapter(mCursorPagerAdapter);
 
         mViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             private int ready = 0;
 
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                //mMovieListPositionsStack.push(new Integer(position));
-                //Log.d(LOG_TAG, "onPageScrolled() Position: " + position);
+                //mMovieListPositionsStack.push(new Integer(mPosition));
+                //Log.d(LOG_TAG, "onPageScrolled() Position: " + mPosition);
 
             }
 
             @Override
             public void onPageSelected(int pos) {
-                //Log.d(LOG_TAG, "onPageSelected() Position: " + pos);
+                Log.d(LOG_TAG, "onPageSelected() Position: " + pos);
 
                 if (ready > 0) {
                     Log.d(LOG_TAG, "onPageSelected() Push " + pos);
-                    mMovieListPositionsStack.push(pos);
-                    position = pos;
+                    mPosition = pos;
 
                 }
                 ready = 0;
@@ -108,19 +107,11 @@ public class ScreenSlidePagerActivity extends AppCompatActivity {
         });
 
 
-
-        mMovieListPositionsStack = new Stack();
-        if(savedInstanceState == null)
-        {
-
-            //Log.d(LOG_TAG, "onCreate() Push " + getIntent().getExtras().getInt(EXTRA_MOVIE_POSITION));
-            mMovieListPositionsStack.push(getIntent().getExtras().getInt(EXTRA_MOVIE_POSITION));
-        }
-        else{
-            mMovieListPositionsStack.addAll(savedInstanceState.getIntegerArrayList(EXTRA_STACK));
-        }
+        getSupportLoaderManager().initLoader(0, null, this);
 
     }
+
+
 
     @Override
     public void onRestart()
@@ -150,7 +141,7 @@ public class ScreenSlidePagerActivity extends AppCompatActivity {
         Log.d(LOG_TAG, "finish");
 
         Intent result = new Intent();
-        result.putExtra(MovieGridFragment.POSITION_EXTRA, position);
+        result.putExtra(MovieGridFragment.POSITION_EXTRA, mPosition);
         setResult(Activity.RESULT_OK, result);
 
         super.finish();
@@ -163,9 +154,7 @@ public class ScreenSlidePagerActivity extends AppCompatActivity {
 
         Log.d(LOG_TAG, "onPause");
 
-        Log.d(LOG_TAG, "onPause: position = " + position);
 
-        mPagerAdapter.notifyDataSetChanged();
 
     }
 
@@ -176,7 +165,6 @@ public class ScreenSlidePagerActivity extends AppCompatActivity {
         super.onStop();
         Log.d(LOG_TAG, "onStop");
 
-        mPagerAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -194,18 +182,9 @@ public class ScreenSlidePagerActivity extends AppCompatActivity {
     public void onBackPressed() {
 
 
-            position = (Integer) mMovieListPositionsStack.pop();
-            Log.d(LOG_TAG, "onBackPressed() Pop " + position);
+        Log.d(LOG_TAG, "onBackPressed() Exiting " + mPosition);
+        super.onBackPressed();
 
-
-            if (!mMovieListPositionsStack.empty()) {
-                position = (Integer) mMovieListPositionsStack.peek();
-                Log.d(LOG_TAG, "onBackPressed() Peek " + position);
-                mViewPager.setCurrentItem(position);
-            }else{
-                Log.d(LOG_TAG, "onBackPressed() Exiting " + position);
-                super.onBackPressed();
-            }
 
     }
 
@@ -216,7 +195,7 @@ public class ScreenSlidePagerActivity extends AppCompatActivity {
             case android.R.id.home:
                 Log.d(LOG_TAG, "onOptionsitemSelected: Home button pressed");
                 Intent result = new Intent();
-                result.putExtra(MovieGridFragment.POSITION_EXTRA, position);
+                result.putExtra(MovieGridFragment.POSITION_EXTRA, mPosition);
                 setResult(Activity.RESULT_OK, result);
 
                 NavUtils.navigateUpFromSameTask(this);
@@ -225,29 +204,43 @@ public class ScreenSlidePagerActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class ScreenSlidePagerAdapter extends FragmentStatePagerAdapter{
-
-        public ScreenSlidePagerAdapter(FragmentManager fm)
-        {
-            super(fm);
-        }
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
 
+        String selection = ContentProviderMovieContract.MoviesToLists.COL_PAGE_NUM + " = " + mPageNum;
 
-        @Override
-        public int getCount()
-        {
-            return MovieListSingleton.get(ScreenSlidePagerActivity.this).getMovieObjArrayList().size();
-        }
-
-
-
-        @Override
-        public Fragment getItem(int position)
-        {
-            Log.d(LOG_TAG, "getItem() Position " + String.valueOf(position));
-
-            return MovieDetailFragment.newInstance(position);
-        }
+        return new CursorLoader(getApplicationContext(),
+                mMoviesUri,
+                MovieGridFragment.GRID_MOVIE_COLUMNS,
+                selection,
+                null,
+                null);
     }
+
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+
+
+
+        mCursorPagerAdapter.swapCursor(data);
+
+        if (data != null && firstLoad == true)
+        {
+            Log.d(LOG_TAG, "onLoadFinished: Setting mViewPager to " + mPosition);
+            mViewPager.setCurrentItem(mPosition);
+            firstLoad = false;
+        }
+
+
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mCursorPagerAdapter.swapCursor(null);
+    }
+
+
 }
